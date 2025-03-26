@@ -11,7 +11,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 
 public class Jaysn {
@@ -60,13 +59,13 @@ public class Jaysn {
         Class<?>[] paramTypes = new Class<?>[components.length];
         Object[] args = new Object[components.length];
 
-        var properties = ((JsonObject) nodes).properties.stream().collect(Collectors
-                .toMap(jsonProperty -> jsonProperty.name.trim().replace("\"", ""),
-                        jsonProperty -> jsonProperty.value.toString().trim().replace("\"", "")));
+//        var properties = ((JsonObject) nodes).properties.stream().collect(Collectors
+//                .toMap(jsonProperty -> jsonProperty.name.trim().replace("\"", ""),
+//                        jsonProperty -> jsonProperty.value.toString().trim().replace("\"", "")));
         for (int i = 0; i < components.length; i++) {
             RecordComponent comp = components[i];
             paramTypes[i] = comp.getType();
-            args[i] = Value.cast(comp.getType(), properties.get(comp.getName()));
+            args[i] = Value.cast(comp.getType(), ((JsonObject) nodes).properties.get(comp.getName()).value);
         }
         Constructor<T> constructor = clazz.getDeclaredConstructor(paramTypes);
         return constructor.newInstance(args);
@@ -121,9 +120,9 @@ public class Jaysn {
                     continue;
                 default:
                     var propertyNameValue = token.split(":");
-                    var name = propertyNameValue[0];
+                    var name = Value.extract(propertyNameValue[0]);
                     if (propertyNameValue.length == 2) {
-                        var value = propertyNameValue[1];
+                        var value = Value.extract(propertyNameValue[1]);
                         ((JsonObject) currentJsonObject).add(new JsonProperty(name, value, currentJsonObject));
                     } else if (propertyNameValue.length == 1) {
                         if (leftBracket.equals(tokens[i + 1])) {
